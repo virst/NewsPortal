@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using NewsPortal.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 
 builder.Services.AddDbContext<NewsPortalContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
