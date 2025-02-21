@@ -8,6 +8,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=NewsPortal;Username=postgres;Password=postgres
       - ConnectionStrings__Redis=redis
+      - ASPNETCORE_URLS=http://*:8080
     depends_on:
       - postgres
       - redis
