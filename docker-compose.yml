@@ -1,0 +1,44 @@
+version: '3.4'
+
+services:
+  newsportal:
+    build:
+      context: ./NewsPortal/
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=NewsPortal;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: NewsPortal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - newsportal
+
+volumes:
+  postgres-data:
+  redis-data:

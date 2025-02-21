@@ -16,7 +16,13 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", async  (NewsPortalContext context) =>
+{
+    var articles = await context.Articles.CountAsync(); 
+    var comments = await context.Comments.CountAsync();
+
+    return $"Total count: Articles - {articles}; Comments - {comments}";
+});
 
 app.MapGet("/articles", async (NewsPortalContext context) =>
 {
