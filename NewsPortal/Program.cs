@@ -1,10 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using NewsPortal.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<NewsPortalContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Добавляем Redis кеширование
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "NewsPortal_";
+});
 
 var app = builder.Build();
 
@@ -44,8 +52,16 @@ app.MapGet("/articles/{id}", async (int id, NewsPortalContext context) =>
     return article == null ? Results.NotFound() : Results.Ok(article);
 });
 
-app.MapGet("/articles/trending", async (NewsPortalContext context) =>
+app.MapGet("/articles/trending", async (NewsPortalContext context, IDistributedCache cache) =>
 {
+    const string cacheKey = "trending_article";
+    var cachedArticle = await cache.GetStringAsync(cacheKey);
+
+    if (cachedArticle != null)
+    {
+        return Results.Ok(System.Text.Json.JsonSerializer.Deserialize<object>(cachedArticle));
+    }
+
     var topArticles = await context.Articles
         .Include(a => a.Comments)
         .OrderByDescending(a => a.Comments.Average(c => c.Rating))
@@ -59,11 +75,24 @@ app.MapGet("/articles/trending", async (NewsPortalContext context) =>
         })
         .ToListAsync();
 
+    if (topArticles.Count == 0)
+    {
+        return Results.NotFound("No articles found.");
+    }
+
     var random = new Random();
     var trendingArticle = topArticles[random.Next(topArticles.Count)];
 
+    // Кешируем результат на 1 минуту
+    var cacheOptions = new DistributedCacheEntryOptions
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+    };
+
+    await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(trendingArticle), cacheOptions);
+
     return Results.Ok(trendingArticle);
-}); 
+});
 
 
 app.Run();
