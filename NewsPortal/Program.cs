@@ -9,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<NewsPortalContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Добавляем Redis кеширование
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
@@ -104,8 +103,7 @@ app.MapGet("/articles/trending", async (NewsPortalContext context, IDistributedC
 
     var random = new Random();
     var trendingArticle = topArticles[random.Next(topArticles.Count)];
-
-    // Кешируем результат на 1 минуту
+ 
     var cacheOptions = new DistributedCacheEntryOptions
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
