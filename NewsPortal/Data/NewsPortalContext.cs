@@ -3,7 +3,7 @@ using NewsPortal.Models;
 
 namespace NewsPortal.Data
 {
-    public class NewsPortalContext : DbContext
+    public sealed class NewsPortalContext : DbContext
     {
         public DbSet<Article> Articles { get; set; }
         public DbSet<Comment> Comments { get; set; }

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NewsPortal.Data;
+using NewsPortal.Dto;
+using NewsPortal.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +29,21 @@ app.MapGet("/articles", async (NewsPortalContext context) =>
     return Results.Ok(articles);
 });
 
-app.MapGet("/articles/{id}", async (int id, NewsPortalContext context) =>
+app.MapPost("/articles", async (ArticleRequest request, NewsPortalContext context) =>
+{
+    var article = new Article
+    {
+        Title = request.Title,
+        Content = request.Content
+    };
+
+    context.Articles.Add(article);
+    await context.SaveChangesAsync();
+
+    return Results.Created($"/articles/{article.Id}", article);
+});
+
+app.MapGet("/articles/{id:int}", async (int id, NewsPortalContext context) =>
 {
     var article = await context.Articles
         .Include(a => a.Comments)
